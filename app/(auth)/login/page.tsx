@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { redirect, useRouter } from "next/navigation";
+import { signIn } from "next-auth/react";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -47,6 +48,18 @@ export default function LoginPage() {
     setIsEmail(!isEmail);
   };
 
+  const handleSubmit2 = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    // Esto llama al provider "credentials" configurado arriba
+    const result = await signIn("credentials", {
+      email,
+      password,
+      redirect: true,
+      callbackUrl: "/dashboard",
+    });
+  };
+
   return (
     <div className="min-h-[calc(100dvh-4rem)] flex items-center justify-center bg-gray-100 dark:bg-gray-900 transition-colors">
       <div className="w-full max-w-md p-8 rounded-2xl shadow-xl bg-white dark:bg-gray-800 transition-all mx-6">
@@ -62,7 +75,21 @@ export default function LoginPage() {
           <p className="text-red-500 text-sm mb-4 text-center">{error}</p>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form
+          onSubmit={async (e) => {
+            e.preventDefault();
+            console.log("login");
+
+            await signIn("credentials", {
+              username: "V027777348",
+              password: "asdasd",
+            });
+
+            console.log("paso login");
+          }}
+          className="space-y-4"
+          method="POST"
+        >
           <div>
             <label
               className="block mb-1 text-gray-600 dark:text-gray-300"

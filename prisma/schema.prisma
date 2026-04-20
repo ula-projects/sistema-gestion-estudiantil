@@ -5,7 +5,6 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 enum Role {
@@ -51,7 +50,7 @@ enum EnrollmentResult {
 // NextAuth core + institutional user profile.
 model User {
   id                 String      @id @default(cuid())
-  email              String      @unique
+  email              String?     @unique
   emailVerified      DateTime?
   passwordHash       String?
   mustChangePassword Boolean     @default(false)
@@ -70,7 +69,7 @@ model User {
 
   accounts           Account[]
   sessions           Session[]
-  resetTokens        PasswordResetToken[]
+  esetTokens        PasswordResetToken[]
 
   createdAt          DateTime    @default(now())
   updatedAt          DateTime    @updatedAt

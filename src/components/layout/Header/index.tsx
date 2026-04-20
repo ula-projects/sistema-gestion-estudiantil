@@ -1,7 +1,11 @@
 import Image from "next/image";
 import Link from "next/link";
+import { auth } from "@/auth";
+import { signOut } from "next-auth/react";
 
-export default function Header() {
+export default async function Header() {
+  const session = await auth();
+
   return (
     <header className="bg-blue-400 dark:bg-gray-800 shadow-xl h-16 flex justify-between">
       <div className="h-16 flex flex-col justify-center ml-2">
@@ -18,12 +22,16 @@ export default function Header() {
       </div>
 
       <div className="mr-2 h-16 flex flex-col justify-center">
-        <Link
-          href="/login"
-          className="px-4 py-2 border-white border rounded-lg"
-        >
-          Login
-        </Link>
+        {!session?.user ? (
+          <Link
+            href="/login"
+            className="px-4 py-2 border-white border rounded-lg"
+          >
+            Login
+          </Link>
+        ) : (
+          <button>Cerrar Sesion</button>
+        )}
       </div>
     </header>
   );

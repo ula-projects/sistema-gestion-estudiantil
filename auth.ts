@@ -17,18 +17,26 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
+        console.log("hola");
+
         const { password, username } = credentials;
         if (!username || !password) {
           throw new InvalidLoginError();
         }
 
         const user = await prisma.user.findUnique({
-          where: { email: username as string },
+          where: { id: username as string },
         });
+
+        console.log(user);
+
+        if (user) {
+          return { email: "nohay", name: user.name };
+        }
 
         throw new InvalidLoginError();
       },
     }),
   ],
-  session: { strategy: "jwt", maxAge: 600 },
+  session: { strategy: "jwt", maxAge: 60 },
 });
