@@ -1,101 +1,104 @@
-import NextAuth from "next-auth";
-import CredentialsProvider from "next-auth/providers/credentials";
-import { AuthOptions } from "next-auth";
+import { handlers } from "@/auth"; // Referring to the auth.ts we just created
+export const { GET, POST } = handlers;
 
-export const authOptions: AuthOptions = {
-  providers: [
-    CredentialsProvider({
-      id: "credentials",
-      name: "credentials",
-      credentials: {
-        email: { label: "Email", type: "text" },
-        password: { label: "Password", type: "password" },
-      },
-      async authorize(credentials, req) {
-        return null;
-        //     if (!credentials?.email || !credentials?.password) {
-        //       throw new Error("Invalid credentials.");
-        //     }
-        //     const snap = await db
-        //       .collection("users")
-        //       .where("email", "==", credentials.email)
-        //       .limit(1)
-        //       .get();
+// import NextAuth from "next-auth";
+// import CredentialsProvider from "next-auth/providers/credentials";
+// import { AuthOptions } from "next-auth";
 
-        //     if (snap.empty) {
-        //       throw new Error("Invalid email or password.");
-        //     }
+// export const authOptions: AuthOptions = {
+//   providers: [
+//     CredentialsProvider({
+//       id: "credentials",
+//       name: "credentials",
+//       credentials: {
+//         email: { label: "Email", type: "text" },
+//         password: { label: "Password", type: "password" },
+//       },
+//       async authorize(credentials, req) {
+//         return null;
+//         //     if (!credentials?.email || !credentials?.password) {
+//         //       throw new Error("Invalid credentials.");
+//         //     }
+//         //     const snap = await db
+//         //       .collection("users")
+//         //       .where("email", "==", credentials.email)
+//         //       .limit(1)
+//         //       .get();
 
-        //     const doc = snap.docs[0];
-        //     const user = doc.data();
+//         //     if (snap.empty) {
+//         //       throw new Error("Invalid email or password.");
+//         //     }
 
-        //     if (!user) {
-        //       throw new Error("User not found.");
-        //     }
+//         //     const doc = snap.docs[0];
+//         //     const user = doc.data();
 
-        //     if (!user.password) {
-        //       throw new Error("Use another authentication method.");
-        //     }
+//         //     if (!user) {
+//         //       throw new Error("User not found.");
+//         //     }
 
-        //     const isValid = await bcrypt.compare(
-        //       credentials.password,
-        //       user.password,
-        //     );
+//         //     if (!user.password) {
+//         //       throw new Error("Use another authentication method.");
+//         //     }
 
-        //     if (!isValid) {
-        //       throw new Error("Wrong password.");
-        //     }
+//         //     const isValid = await bcrypt.compare(
+//         //       credentials.password,
+//         //       user.password,
+//         //     );
 
-        //     const user_res: AuthUser = {
-        //       email: user?.email,
-        //       name: user?.name,
-        //       id: user?.id,
-        //       image: user?.image,
-        //       role: user?.role,
-        //     };
+//         //     if (!isValid) {
+//         //       throw new Error("Wrong password.");
+//         //     }
 
-        //     return user_res;
-      },
-    }),
-  ],
-  session: {
-    strategy: "jwt",
-  },
+//         //     const user_res: AuthUser = {
+//         //       email: user?.email,
+//         //       name: user?.name,
+//         //       id: user?.id,
+//         //       image: user?.image,
+//         //       role: user?.role,
+//         //     };
 
-  pages: {
-    signIn: "/login",
-  },
+//         //     return user_res;
+//       },
+//     }),
+//   ],
+//   session: {
+//     strategy: "jwt",
+//   },
 
-  callbacks: {
-    async jwt({ token }) {
-      //   if (token) {
-      //     const snap = await db
-      //       .collection("users")
-      //       .where("email", "==", token.email)
-      //       .limit(1)
-      //       .get();
+//   pages: {
+//     signIn: "/login",
+//   },
 
-      //     if (snap.empty) {
-      //       throw new Error("Invalid User.");
-      //     }
+//   callbacks: {
+//     async jwt({ token }) {
+//       //   if (token) {
+//       //     const snap = await db
+//       //       .collection("users")
+//       //       .where("email", "==", token.email)
+//       //       .limit(1)
+//       //       .get();
 
-      //     const doc = snap.docs[0];
-      //     const user = doc.data();
-      //     token.role = user.role;
-      //     token.id = user.id;
-      //   }
+//       //     if (snap.empty) {
+//       //       throw new Error("Invalid User.");
+//       //     }
 
-      return token;
-    },
-    async session({ session, token }) {
-      //   session.user.role = token.role as string;
-      //   session.user.id = token.id as string;
+//       //     const doc = snap.docs[0];
+//       //     const user = doc.data();
+//       //     token.role = user.role;
+//       //     token.id = user.id;
+//       //   }
 
-      return session;
-    },
-  },
-};
+//       return token;
+//     },
+//     async session({ session, token }) {
+//       //   session.user.role = token.role as string;
+//       //   session.user.id = token.id as string;
 
-const handler = NextAuth(authOptions);
+//       return session;
+//     },
+//   },
+// };
 
-export { handler as GET, handler as POST };
+// const handler = NextAuth(authOptions);
+
+// export { handler as GET, handler as POST };

@@ -48,7 +48,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-[calc(100dvh-70px)] flex items-center justify-center bg-gray-100 dark:bg-gray-900 transition-colors">
+    <div className="min-h-[calc(100dvh-4rem)] flex items-center justify-center bg-gray-100 dark:bg-gray-900 transition-colors">
       <div className="w-full max-w-md p-8 rounded-2xl shadow-xl bg-white dark:bg-gray-800 transition-all mx-6">
         <h1 className="text-3xl font-bold text-center text-gray-800 dark:text-white mb-6">
           Iniciar Sesión

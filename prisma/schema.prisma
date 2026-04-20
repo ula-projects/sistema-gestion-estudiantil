@@ -1,0 +1,310 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  STUDENT
+  TEACHER
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+enum AdminSubRole {
+  OFFICE
+}
+
+enum StudentStatus {
+  ACTIVE
+  INACTIVE
+  GRADUATED
+  ON_LEAVE
+}
+
+enum SectionStatus {
+  OPEN
+  CLOSED
+  CANCELLED
+}
+
+enum EnrollmentStatus {
+  ENROLLED
+  DROPPED
+  COMPLETED
+}
+
+enum EnrollmentResult {
+  PASSED
+  FAILED
+}
+
+// NextAuth core + institutional user profile.
+model User {
+  id                 String      @id @default(cuid())
+  email              String      @unique
+  emailVerified      DateTime?
+  passwordHash       String?
+  mustChangePassword Boolean     @default(false)
+  name               String?
+  image              String?
+  role               Role        @default(STUDENT)
+  status             UserStatus  @default(ACTIVE)
+
+  // Institutional onboarding: account created by office staff.
+  createdByAdminId   String?
+  createdByAdmin     Admin?      @relation("AdminCreatesUsers", fields: [createdByAdminId], references: [id])
+
+  studentProfile     Student?
+  teacherProfile     Teacher?
+  adminProfile       Admin?      @relation("AdminUser")
+
+  accounts           Account[]
+  sessions           Session[]
+  resetTokens        PasswordResetToken[]
+
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+
+  @@index([role])
+  @@index([createdByAdminId])
+}
+
+model Account {
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Session {
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([sessionToken])
+  @@index([userId])
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@id([identifier, token])
+}
+
+// For "Forgot password" flow via institutional email.
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  token     String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Student {
+  id              String        @id @default(cuid())
+  userId          String        @unique
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  programId       String
+  program         Program       @relation(fields: [programId], references: [id], onDelete: Restrict)
+
+  governmentId    String        @unique
+  firstName       String
+  lastName        String
+  birthDate       DateTime
+  personalEmail   String?
+  phoneNumber1    String
+  phoneNumber2    String?
+  address         String?
+
+  enrollmentDate  DateTime      @default(now())
+  status          StudentStatus @default(ACTIVE)
+  averageGrade    Float         @default(0.0)
+  totalCredits    Int           @default(0)
+
+  enrollments     Enrollment[]
+
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@index([programId])
+}
+
+model Teacher {
+  id            String    @id @default(cuid())
+  userId        String    @unique
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Placeholder profile for current phase.
+  employeeCode  String?   @unique
+  firstName     String?
+  lastName      String?
+  isActive      Boolean   @default(true)
+
+  sections      Section[]
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Admin {
+  id            String       @id @default(cuid())
+  userId        String       @unique
+  user          User         @relation("AdminUser", fields: [userId], references: [id], onDelete: Cascade)
+  subRole       AdminSubRole
+  isActive      Boolean      @default(true)
+
+  createdUsers  User[]       @relation("AdminCreatesUsers")
+
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+}
+
+model Program {
+  id            String          @id @default(cuid())
+  code          String          @unique
+  name          String
+  isActive      Boolean         @default(true)
+
+  students      Student[]
+  studyPlan     ProgramCourse[]
+
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+}
+
+model ProgramCourse {
+  programId     String
+  courseId      String
+  semester      Int?
+  isRequired    Boolean         @default(true)
+
+  program       Program         @relation(fields: [programId], references: [id], onDelete: Cascade)
+  course        Course          @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@id([programId, courseId])
+  @@index([courseId])
+}
+
+model AcademicTerm {
+  id                    String      @id @default(cuid())
+  code                  String      @unique // e.g. 2026-Q1
+  name                  String
+  startDate             DateTime
+  endDate               DateTime
+  inscripcionesAbiertas Boolean     @default(false)
+  isActive              Boolean     @default(true)
+
+  sections              Section[]
+
+  createdAt             DateTime    @default(now())
+  updatedAt             DateTime    @updatedAt
+}
+
+model Course {
+  id                 String                @id @default(cuid())
+  code               String                @unique // e.g. PHYS-101
+  name               String
+  credits            Int
+  minCreditsRequired Int                   @default(0)
+  isActive           Boolean               @default(true)
+
+  prerequisites      CoursePrerequisite[]  @relation("CourseToPrerequisite")
+  requiredBy         CoursePrerequisite[]  @relation("PrerequisiteToCourse")
+  sections           Section[]
+  programs           ProgramCourse[]
+
+  createdAt          DateTime              @default(now())
+  updatedAt          DateTime              @updatedAt
+}
+
+model CoursePrerequisite {
+  courseId        String
+  prerequisiteId  String
+
+  course          Course    @relation("CourseToPrerequisite", fields: [courseId], references: [id], onDelete: Cascade)
+  prerequisite    Course    @relation("PrerequisiteToCourse", fields: [prerequisiteId], references: [id], onDelete: Restrict)
+
+  @@id([courseId, prerequisiteId])
+  @@index([prerequisiteId])
+}
+
+model Section {
+  id            String         @id @default(cuid())
+  courseId      String
+  termId        String
+  teacherId     String?
+
+  course        Course         @relation(fields: [courseId], references: [id], onDelete: Restrict)
+  term          AcademicTerm   @relation(fields: [termId], references: [id], onDelete: Restrict)
+  teacher       Teacher?       @relation(fields: [teacherId], references: [id], onDelete: SetNull)
+
+  sectionCode   String
+  room          String?
+  schedule      String
+  capacity      Int
+  enrolledCount Int            @default(0)
+  status        SectionStatus  @default(OPEN)
+
+  enrollments   Enrollment[]
+
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  @@unique([courseId, termId, sectionCode])
+  @@index([termId])
+  @@index([teacherId])
+}
+
+model Enrollment {
+  id          String            @id @default(cuid())
+  studentId   String
+  sectionId   String
+
+  student     Student           @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  section     Section           @relation(fields: [sectionId], references: [id], onDelete: Restrict)
+
+  status      EnrollmentStatus  @default(ENROLLED)
+  result      EnrollmentResult?
+  enrolledAt  DateTime          @default(now())
+  droppedAt   DateTime?
+  completedAt DateTime?
+  finalGrade  Float?
+
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  @@unique([studentId, sectionId])
+  @@index([sectionId])
+  @@index([status])
+}
