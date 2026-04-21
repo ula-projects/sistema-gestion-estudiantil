@@ -17,8 +17,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        console.log("hola");
-
         const { password, username } = credentials;
         if (!username || !password) {
           throw new InvalidLoginError();
@@ -28,8 +26,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           where: { id: username as string },
         });
 
-        console.log(user);
-
         if (user) {
           return { email: "nohay", name: user.name };
         }
@@ -38,5 +34,22 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       },
     }),
   ],
-  session: { strategy: "jwt", maxAge: 60 },
+  session: { strategy: "jwt", maxAge: 600, updateAge: 0 },
+  callbacks: {
+    async jwt({ token, user }) {
+      const now = Math.floor(Date.now() / 1000);
+
+      // 1. Al iniciar sesión por primera vez
+      if (user) {
+        token.expiresAt = now + 10 * 60; // Guardamos el momento exacto del fin
+      }
+
+      // 2. Verificación manual en cada llamada al token
+      // Si el tiempo actual superó nuestro límite guardado, invalidamos el token
+      if (now > (token.expiresAt as number)) {
+        return null; // Esto destruye la sesión
+      }
+      return token;
+    },
+  },
 });

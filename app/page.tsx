@@ -1,7 +1,12 @@
-import React from "react";
+import { auth } from "@/auth";
+import LandingPage from "./Landing";
 
-export default function HomePage() {
-  return (
-    <div className="min-h-[calc(100dvh-4rem)] bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-100"></div>
-  );
+export default async function HomePage() {
+  const session = await auth();
+
+  if (!session) {
+    return <LandingPage />;
+  }
+
+  return <div></div>;
 }
