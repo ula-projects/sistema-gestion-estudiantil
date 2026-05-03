@@ -7,9 +7,15 @@ datasource db {
   provider = "postgresql"
 }
 
+/**
+ * =========================
+ * ENUMS
+ * =========================
+ */
+
 enum Role {
   STUDENT
-  TEACHER
+  PROFESSOR
   ADMIN
 }
 
@@ -19,291 +25,663 @@ enum UserStatus {
   SUSPENDED
 }
 
-enum AdminSubRole {
-  OFFICE
-}
-
 enum StudentStatus {
   ACTIVE
-  INACTIVE
   GRADUATED
-  ON_LEAVE
+  WITHDRAWN
+  SUSPENDED
+}
+
+enum CurriculumStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+}
+
+enum RequirementType {
+  REQUIRED
+  ELECTIVE
+}
+
+enum AcademicPeriod {
+  FIRST
+  SECOND
+  SUMMER
+}
+
+enum TermStatus {
+  PLANNED
+  ACTIVE
+  CLOSED
+}
+
+enum EnrollmentPeriodStatus {
+  SCHEDULED
+  OPEN
+  CLOSED
+  CANCELLED
 }
 
 enum SectionStatus {
+  PLANNED
   OPEN
   CLOSED
   CANCELLED
 }
 
 enum EnrollmentStatus {
+  PENDING
   ENROLLED
   DROPPED
   COMPLETED
-}
-
-enum EnrollmentResult {
-  PASSED
   FAILED
 }
 
-// NextAuth core + institutional user profile.
+enum GradeStatus {
+  PENDING
+  PASSED
+  FAILED
+  WITHDRAWN
+}
+
+enum DayOfWeek {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+  SUNDAY
+}
+
+enum Modality {
+  IN_PERSON
+  ONLINE
+  HYBRID
+}
+
+/**
+ * =========================
+ * AUTH / USERS
+ * Compatible con Auth.js / NextAuth Prisma Adapter
+ * =========================
+ */
+
 model User {
-  id                 String      @id @default(cuid())
-  email              String?     @unique
-  emailVerified      DateTime?
-  passwordHash       String?
-  mustChangePassword Boolean     @default(false)
-  name               String?
-  image              String?
-  role               Role        @default(STUDENT)
-  status             UserStatus  @default(ACTIVE)
+  id            String     @id @default(cuid())
+  name          String?
+  email         String     @unique
+  emailVerified DateTime?
+  institutionalId String     @unique
 
-  // Institutional onboarding: account created by office staff.
-  createdByAdminId   String?
-  createdByAdmin     Admin?      @relation("AdminCreatesUsers", fields: [createdByAdminId], references: [id])
+  passwordHash  String?
 
-  studentProfile     Student?
-  teacherProfile     Teacher?
-  adminProfile       Admin?      @relation("AdminUser")
+  role          Role       @default(STUDENT)
+  status        UserStatus @default(ACTIVE)
 
-  accounts           Account[]
-  sessions           Session[]
-  esetTokens        PasswordResetToken[]
+  accounts      Account[]
+  sessions      Session[]
 
-  createdAt          DateTime    @default(now())
-  updatedAt          DateTime    @updatedAt
+  studentProfile   StudentProfile?
+  professorProfile ProfessorProfile?
+  adminProfile     AdminProfile?
+
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
 
   @@index([role])
-  @@index([createdByAdminId])
+  @@index([status])
 }
 
 model Account {
+  id                String  @id @default(cuid())
   userId            String
   type              String
   provider          String
   providerAccountId String
-  refresh_token     String?
-  access_token      String?
+
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
   expires_at        Int?
   token_type        String?
   scope             String?
-  id_token          String?
+  id_token          String? @db.Text
   session_state     String?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@id([provider, providerAccountId])
+  @@unique([provider, providerAccountId])
   @@index([userId])
 }
 
 model Session {
+  id           String   @id @default(cuid())
   sessionToken String   @unique
   userId       String
   expires      DateTime
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@id([sessionToken])
   @@index([userId])
 }
 
 model VerificationToken {
   identifier String
-  token      String   @unique
+  token      String
   expires    DateTime
 
-  @@id([identifier, token])
+  @@unique([identifier, token])
 }
 
-// For "Forgot password" flow via institutional email.
-model PasswordResetToken {
-  id        String    @id @default(cuid())
-  userId    String
-  token     String    @unique
-  expiresAt DateTime
-  usedAt    DateTime?
-  createdAt DateTime  @default(now())
+/**
+ * =========================
+ * ESTRUCTURA ACADÉMICA
+ * Facultad -> Carrera -> Opción -> Pensum
+ * =========================
+ */
+
+model Faculty {
+  id          String   @id @default(cuid())
+  code        String   @unique
+  name        String
+  description String?
+
+  careers     Career[]
+  departments Department[]
+
+  enrollmentPeriods EnrollmentPeriod[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Department {
+  id        String  @id @default(cuid())
+  facultyId String
+  code      String
+  name      String
+
+  faculty    Faculty @relation(fields: [facultyId], references: [id], onDelete: Restrict)
+  professors ProfessorProfile[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([facultyId, code])
+  @@index([facultyId])
+}
+
+model Career {
+  id          String  @id @default(cuid())
+  facultyId   String
+  code        String
+  name        String
+  description String?
+
+  faculty Faculty @relation(fields: [facultyId], references: [id], onDelete: Restrict)
+  options CareerOption[]
+
+  enrollmentPeriods EnrollmentPeriod[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([facultyId, code])
+  @@index([facultyId])
+}
+
+model CareerOption {
+  id          String  @id @default(cuid())
+  careerId    String
+  code        String
+  name        String
+  description String?
+
+  career      Career @relation(fields: [careerId], references: [id], onDelete: Restrict)
+  curricula   Curriculum[]
+  students    StudentProfile[]
+
+  enrollmentPeriods EnrollmentPeriod[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([careerId, code])
+  @@index([careerId])
+}
+
+model Curriculum {
+  id                 String           @id @default(cuid())
+  careerOptionId      String
+  code               String
+  name               String
+  version            Int
+  status             CurriculumStatus @default(DRAFT)
+  totalCredits        Int?
+
+  effectiveFromTermId String?
+
+  careerOption CareerOption @relation(fields: [careerOptionId], references: [id], onDelete: Restrict)
+
+  effectiveFromTerm AcademicTerm? @relation( "CurriculumEffectiveTerm", fields: [effectiveFromTermId], references: [id], onDelete: SetNull)
+
+  subjects       CurriculumSubject[]
+  electiveGroups ElectiveGroup[]
+  students       StudentProfile[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([careerOptionId, version])
+  @@unique([careerOptionId, code])
+  @@index([status])
+}
+
+/**
+ * Materias base.
+ * Ejemplo:
+ * MAT101 - Matemática I
+ * INF201 - Programación II
+ */
+model Subject {
+  id           String  @id @default(cuid())
+  code         String  @unique
+  name         String
+  description  String?
+  credits      Int
+  hoursPerWeek Int?
+  isActive     Boolean @default(true)
+
+  curriculumSubjects CurriculumSubject[]
+  sections           CourseSection[]
+
+  // Materias que esta materia exige como prerrequisito.
+  prerequisites SubjectPrerequisite[] @relation("SubjectPrerequisites")
+
+  // Materias para las cuales esta materia es prerrequisito.
+  requiredFor   SubjectPrerequisite[] @relation("PrerequisiteSubjects")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isActive])
+}
+
+/**
+ * Relación de prerrequisitos.
+ * Ejemplo:
+ * Programación II requiere Programación I.
+ */
+model SubjectPrerequisite {
+  subjectId      String
+  prerequisiteId String
+
+  subject Subject @relation( "SubjectPrerequisites", fields: [subjectId], references: [id], onDelete: Cascade)
+
+  prerequisite Subject @relation( "PrerequisiteSubjects", fields: [prerequisiteId], references: [id], onDelete: Restrict)
+
+  @@id([subjectId, prerequisiteId])
+}
+
+/**
+ * Materias dentro de un pensum.
+ * Aquí defines si una materia es obligatoria o electiva,
+ * en qué semestre sugerido va y con cuántos créditos cuenta dentro del pensum.
+ */
+model CurriculumSubject {
+  id              String          @id @default(cuid())
+  curriculumId    String
+  subjectId       String
+  electiveGroupId String?
+
+  requirementType RequirementType
+  semesterNumber  Int
+  credits         Int
+  minPassingGrade Decimal         @default(10.00) @db.Decimal(5, 2)
+
+  curriculum Curriculum @relation(fields: [curriculumId], references: [id], onDelete: Cascade)
+  subject    Subject    @relation(fields: [subjectId], references: [id], onDelete: Restrict)
+
+  electiveGroup ElectiveGroup? @relation( fields: [electiveGroupId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([curriculumId, subjectId])
+  @@index([curriculumId, semesterNumber])
+  @@index([subjectId])
+}
+
+/**
+ * Grupo de materias electivas.
+ * Ejemplo:
+ * "Electivas Profesionales": el estudiante debe aprobar 2 materias o 6 créditos.
+ */
+model ElectiveGroup {
+  id               String @id @default(cuid())
+  curriculumId      String
+  name             String
+  semesterNumber   Int
+  requiredCredits  Int?
+  requiredSubjects Int?
+
+  curriculum Curriculum          @relation(fields: [curriculumId], references: [id], onDelete: Cascade)
+  subjects   CurriculumSubject[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([curriculumId])
+}
+
+/**
+ * =========================
+ * PERFILES POR ROL
+ * =========================
+ */
+
+model StudentProfile {
+  id                    String        @id @default(cuid())
+  userId                String        @unique
+  studentCode           String        @unique
+  nationalId            String?       @unique
+
+  birthDate             DateTime?
+  phone                 String?
+  address               String?
+
+  admissionTermId        String?
+  currentCareerOptionId  String
+  curriculumId           String
+
+  status                StudentStatus @default(ACTIVE)
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@index([userId])
+  admissionTerm AcademicTerm? @relation( "StudentAdmissionTerm", fields: [admissionTermId], references: [id], onDelete: SetNull)
+
+  currentCareerOption CareerOption @relation( fields: [currentCareerOptionId], references: [id], onDelete: Restrict)
+
+  curriculum Curriculum @relation(fields: [curriculumId], references: [id], onDelete: Restrict)
+
+  enrollments SectionEnrollment[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([currentCareerOptionId])
+  @@index([curriculumId])
+  @@index([status])
 }
 
-model Student {
-  id              String        @id @default(cuid())
-  userId          String        @unique
-  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  programId       String
-  program         Program       @relation(fields: [programId], references: [id], onDelete: Restrict)
+model ProfessorProfile {
+  id           String  @id @default(cuid())
+  userId       String  @unique
+  employeeCode String  @unique
+  departmentId String?
 
-  governmentId    String        @unique
-  firstName       String
-  lastName        String
-  birthDate       DateTime
-  personalEmail   String?
-  phoneNumber1    String
-  phoneNumber2    String?
-  address         String?
+  phone        String?
+  academicTitle String?
+  office       String?
 
-  enrollmentDate  DateTime      @default(now())
-  status          StudentStatus @default(ACTIVE)
-  averageGrade    Float         @default(0.0)
-  totalCredits    Int           @default(0)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  enrollments     Enrollment[]
+  department Department? @relation( fields: [departmentId], references: [id], onDelete: SetNull)
 
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+  sections       CourseSection[]
+  gradesUploaded StudentGrade[]
 
-  @@index([programId])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([departmentId])
 }
 
-model Teacher {
-  id            String    @id @default(cuid())
-  userId        String    @unique
-  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+model AdminProfile {
+  id           String  @id @default(cuid())
+  userId       String  @unique
+  employeeCode String? @unique
+  position     String?
 
-  // Placeholder profile for current phase.
-  employeeCode  String?   @unique
-  firstName     String?
-  lastName      String?
-  isActive      Boolean   @default(true)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  sections      Section[]
-
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
-model Admin {
-  id            String       @id @default(cuid())
-  userId        String       @unique
-  user          User         @relation("AdminUser", fields: [userId], references: [id], onDelete: Cascade)
-  subRole       AdminSubRole
-  isActive      Boolean      @default(true)
-
-  createdUsers  User[]       @relation("AdminCreatesUsers")
-
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
-}
-
-model Program {
-  id            String          @id @default(cuid())
-  code          String          @unique
-  name          String
-  isActive      Boolean         @default(true)
-
-  students      Student[]
-  studyPlan     ProgramCourse[]
-
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
-}
-
-model ProgramCourse {
-  programId     String
-  courseId      String
-  semester      Int?
-  isRequired    Boolean         @default(true)
-
-  program       Program         @relation(fields: [programId], references: [id], onDelete: Cascade)
-  course        Course          @relation(fields: [courseId], references: [id], onDelete: Cascade)
-
-  @@id([programId, courseId])
-  @@index([courseId])
-}
+/**
+ * =========================
+ * SEMESTRES / PERIODOS
+ * =========================
+ */
 
 model AcademicTerm {
-  id                    String      @id @default(cuid())
-  code                  String      @unique // e.g. 2026-Q1
-  name                  String
-  startDate             DateTime
-  endDate               DateTime
-  inscripcionesAbiertas Boolean     @default(false)
-  isActive              Boolean     @default(true)
+  id        String         @id @default(cuid())
+  code      String         @unique // Ejemplo: "2026-1"
+  year      Int
+  period    AcademicPeriod
+  startsAt  DateTime
+  endsAt    DateTime
+  status    TermStatus     @default(PLANNED)
 
-  sections              Section[]
+  enrollmentPeriods EnrollmentPeriod[]
+  sections          CourseSection[]
 
-  createdAt             DateTime    @default(now())
-  updatedAt             DateTime    @updatedAt
+  admittedStudents StudentProfile[] @relation("StudentAdmissionTerm")
+  curriculaEffective Curriculum[]   @relation("CurriculumEffectiveTerm")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([year, period])
+  @@index([status])
 }
 
-model Course {
-  id                 String                @id @default(cuid())
-  code               String                @unique // e.g. PHYS-101
-  name               String
-  credits            Int
-  minCreditsRequired Int                   @default(0)
-  isActive           Boolean               @default(true)
+/**
+ * Proceso de inscripción.
+ * Sirve para activar o cerrar la inscripción antes de cada semestre.
+ */
+model EnrollmentPeriod {
+  id        String                 @id @default(cuid())
+  termId    String
+  name      String
+  startsAt  DateTime
+  endsAt    DateTime
+  status    EnrollmentPeriodStatus @default(SCHEDULED)
 
-  prerequisites      CoursePrerequisite[]  @relation("CourseToPrerequisite")
-  requiredBy         CoursePrerequisite[]  @relation("PrerequisiteToCourse")
-  sections           Section[]
-  programs           ProgramCourse[]
+  // Opcional: restringir proceso por facultad, carrera u opción.
+  facultyId      String?
+  careerId       String?
+  careerOptionId String?
 
-  createdAt          DateTime              @default(now())
-  updatedAt          DateTime              @updatedAt
-}
+  term AcademicTerm @relation(fields: [termId], references: [id], onDelete: Cascade)
 
-model CoursePrerequisite {
-  courseId        String
-  prerequisiteId  String
+  faculty      Faculty?      @relation(fields: [facultyId], references: [id], onDelete: SetNull)
+  career       Career?       @relation(fields: [careerId], references: [id], onDelete: SetNull)
+  careerOption CareerOption? @relation(fields: [careerOptionId], references: [id], onDelete: SetNull)
 
-  course          Course    @relation("CourseToPrerequisite", fields: [courseId], references: [id], onDelete: Cascade)
-  prerequisite    Course    @relation("PrerequisiteToCourse", fields: [prerequisiteId], references: [id], onDelete: Restrict)
+  enrollments SectionEnrollment[]
 
-  @@id([courseId, prerequisiteId])
-  @@index([prerequisiteId])
-}
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-model Section {
-  id            String         @id @default(cuid())
-  courseId      String
-  termId        String
-  teacherId     String?
-
-  course        Course         @relation(fields: [courseId], references: [id], onDelete: Restrict)
-  term          AcademicTerm   @relation(fields: [termId], references: [id], onDelete: Restrict)
-  teacher       Teacher?       @relation(fields: [teacherId], references: [id], onDelete: SetNull)
-
-  sectionCode   String
-  room          String?
-  schedule      String
-  capacity      Int
-  enrolledCount Int            @default(0)
-  status        SectionStatus  @default(OPEN)
-
-  enrollments   Enrollment[]
-
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-
-  @@unique([courseId, termId, sectionCode])
   @@index([termId])
-  @@index([teacherId])
+  @@index([status])
+  @@index([facultyId])
+  @@index([careerId])
+  @@index([careerOptionId])
 }
 
-model Enrollment {
-  id          String            @id @default(cuid())
-  studentId   String
+/**
+ * =========================
+ * OFERTA ACADÉMICA / SECCIONES / HORARIOS
+ * =========================
+ */
+
+model CourseSection {
+  id          String        @id @default(cuid())
+  termId      String
+  subjectId   String
+  professorId String?
+
+  sectionCode String        // Ejemplo: "A", "B", "01"
+  capacity    Int
+  modality    Modality      @default(IN_PERSON)
+  status      SectionStatus @default(PLANNED)
+
+  gradesSubmittedAt DateTime?
+  gradesLockedAt    DateTime?
+
+  term      AcademicTerm      @relation(fields: [termId], references: [id], onDelete: Cascade)
+  subject   Subject           @relation(fields: [subjectId], references: [id], onDelete: Restrict)
+  professor ProfessorProfile? @relation(fields: [professorId], references: [id], onDelete: SetNull)
+
+  schedules   SectionSchedule[]
+  enrollments SectionEnrollment[]
+  gradeItems  GradeItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([termId, subjectId, sectionCode])
+  @@index([termId])
+  @@index([subjectId])
+  @@index([professorId])
+  @@index([status])
+}
+
+model Classroom {
+  id       String  @id @default(cuid())
+  code     String  @unique // Ejemplo: "LAB-01", "AULA-203"
+  building String?
+  room     String?
+  capacity Int?
+
+  schedules SectionSchedule[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+/**
+ * Horario de una sección.
+ * startMinute y endMinute representan minutos desde las 00:00.
+ * Ejemplo:
+ * 08:00 = 480
+ * 09:30 = 570
+ */
+model SectionSchedule {
+  id          String    @id @default(cuid())
   sectionId   String
+  classroomId String?
 
-  student     Student           @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  section     Section           @relation(fields: [sectionId], references: [id], onDelete: Restrict)
+  dayOfWeek   DayOfWeek
+  startMinute Int
+  endMinute   Int
 
-  status      EnrollmentStatus  @default(ENROLLED)
-  result      EnrollmentResult?
-  enrolledAt  DateTime          @default(now())
-  droppedAt   DateTime?
-  completedAt DateTime?
-  finalGrade  Float?
+  section CourseSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  classroom Classroom?  @relation(fields: [classroomId], references: [id], onDelete: SetNull)
 
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([sectionId])
+  @@index([classroomId])
+  @@index([dayOfWeek])
+}
+
+/**
+ * =========================
+ * INSCRIPCIONES Y NOTAS
+ * =========================
+ */
+
+/**
+ * Inscripción de un estudiante en una sección.
+ * Esta tabla es clave para:
+ * - historial académico
+ * - materias vistas
+ * - materias aprobadas
+ * - promedio
+ * - estudiantes por sección
+ * - notas finales
+ */
+model SectionEnrollment {
+  id                 String           @id @default(cuid())
+  studentId           String
+  sectionId           String
+  enrollmentPeriodId  String?
+
+  status              EnrollmentStatus @default(PENDING)
+
+  enrolledAt          DateTime         @default(now())
+  droppedAt           DateTime?
+
+  finalGrade          Decimal?         @db.Decimal(5, 2)
+  gradeStatus         GradeStatus?
+  approvedAt          DateTime?
+
+  student StudentProfile @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  section CourseSection  @relation(fields: [sectionId], references: [id], onDelete: Restrict)
+
+  enrollmentPeriod EnrollmentPeriod? @relation( fields: [enrollmentPeriodId], references: [id], onDelete: SetNull)
+
+  grades StudentGrade[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([studentId, sectionId])
+  @@index([studentId])
   @@index([sectionId])
   @@index([status])
+  @@index([gradeStatus])
+}
+
+/**
+ * Ítems de evaluación dentro de una sección.
+ * Ejemplo:
+ * Parcial 1 - 25%
+ * Proyecto - 30%
+ * Examen final - 45%
+ */
+model GradeItem {
+  id        String   @id @default(cuid())
+  sectionId String
+  name      String
+  weight    Decimal  @db.Decimal(5, 2) // porcentaje: 25.00, 30.00, etc.
+  maxScore  Decimal  @default(20.00) @db.Decimal(5, 2)
+  dueDate   DateTime?
+
+  section CourseSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  grades  StudentGrade[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([sectionId])
+}
+
+/**
+ * Nota de un estudiante en un ítem de evaluación.
+ */
+model StudentGrade {
+  id                  String   @id @default(cuid())
+  enrollmentId         String
+  gradeItemId          String
+  score               Decimal  @db.Decimal(5, 2)
+
+  gradedAt             DateTime @default(now())
+  gradedByProfessorId  String?
+
+  enrollment SectionEnrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  gradeItem  GradeItem         @relation(fields: [gradeItemId], references: [id], onDelete: Cascade)
+
+  gradedBy ProfessorProfile? @relation( fields: [gradedByProfessorId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([enrollmentId, gradeItemId])
+  @@index([gradedByProfessorId])
 }
