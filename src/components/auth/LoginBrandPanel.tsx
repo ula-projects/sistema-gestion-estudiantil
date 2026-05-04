@@ -22,7 +22,7 @@ export function LoginBrandPanel() {
             <div className="mt-8 h-1 w-14 rounded-full bg-yellow-400" />
           </div>
 
-          <div className="mt-12 max-w-md mb-5 rounded-3xl border border-white/15 bg-white/10 p-6 backdrop-blur">
+          <div className="my-12 max-w-md rounded-3xl border border-white/15 bg-white/10 p-6 backdrop-blur">
             <div className="flex gap-4">
               <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-yellow-400/15 text-yellow-400">
                 <CalendarDays size={26} />
