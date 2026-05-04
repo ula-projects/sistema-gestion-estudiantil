@@ -1,9 +1,9 @@
 import { auth } from "@/auth";
 import { Role } from "@/src/generated/prisma/enums";
-import LandingPage from "./(home)/Landing";
-import AdminPage from "./(home)/AdminDashboad";
-import StudentPage from "./(home)/StudentDashboard";
-import ProfessorPage from "./(home)/ProfessorDashboard";
+import LandingPage from "./Landing";
+import AdminPage from "./AdminDashboad";
+import StudentPage from "./StudentDashboard";
+import ProfessorPage from "./ProfessorDashboard";
 
 export default async function HomePage() {
   const session = await auth();
