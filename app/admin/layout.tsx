@@ -14,8 +14,8 @@ export default async function AdminLayout({ children }: AdminLayoutProps) {
   const session = await requireAdmin();
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900">
-      <div className="flex min-h-screen">
+    <div className="h-screen bg-slate-50 text-slate-900">
+      <div className="flex h-screen">
         <aside className="hidden w-72 shrink-0 bg-[#031b46] text-white lg:flex lg:flex-col">
           <div className="flex w-full items-center px-6 py-4">
             <Link href="/">
@@ -56,7 +56,9 @@ export default async function AdminLayout({ children }: AdminLayoutProps) {
             </div>
           </header>
 
-          <main className="flex-1 px-4 py-6 md:px-8">{children}</main>
+          <main className="flex-1 px-4 py-6 md:px-8 overflow-auto">
+            {children}
+          </main>
         </div>
       </div>
     </div>
