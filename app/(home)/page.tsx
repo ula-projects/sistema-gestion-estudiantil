@@ -8,19 +8,19 @@ import ProfessorPage from "./ProfessorDashboard";
 export default async function HomePage() {
   const session = await auth();
 
-  if (!session) {
-    return <LandingPage />;
-  }
+  return <LandingPage />;
+  // if (!session) {
+  // }
 
-  const { user } = session;
+  // const { user } = session;
 
-  switch (user.role) {
-    case Role.ADMIN:
-      return <AdminPage />;
-    case Role.PROFESSOR:
-      return <ProfessorPage />;
-    case Role.STUDENT:
-      return <StudentPage />;
-  }
-  return <></>;
+  // switch (user.role) {
+  //   case Role.ADMIN:
+  //     return <AdminPage />;
+  //   case Role.PROFESSOR:
+  //     return <ProfessorPage />;
+  //   case Role.STUDENT:
+  //     return <StudentPage />;
+  // }
+  // return <></>;
 }
