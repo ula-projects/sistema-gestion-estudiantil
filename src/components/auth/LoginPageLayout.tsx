@@ -4,7 +4,7 @@ import { LoginForm } from "./LoginForm";
 
 export function LoginPageLayout() {
   return (
-    <main className="relative h-[calc(100dvh-5rem)] bg-[#061b3a]/95 text-slate-900">
+    <main className="relative min-h-[calc(100dvh-5rem)] bg-[#061b3a]/95 text-slate-900">
       <Image
         src="/images/Hero.png"
         alt="Estudiantes universitarios usando una laptop"
