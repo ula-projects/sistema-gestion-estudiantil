@@ -1,25 +1,43 @@
+// src/lib/auth/require-admin.ts
+
 import { auth } from "@/auth";
-import { NextResponse } from "next/server";
+import { redirect } from "next/navigation";
 
 export async function requireAdmin() {
   const session = await auth();
 
   if (!session?.user) {
-    return {
-      error: NextResponse.json({ message: "No autenticado" }, { status: 401 }),
-      session: null,
-    };
+    redirect("/login");
   }
 
   if (session.user.role !== "ADMIN") {
-    return {
-      error: NextResponse.json({ message: "No autorizado" }, { status: 403 }),
-      session: null,
-    };
+    redirect("/home");
   }
 
-  return {
-    error: null,
-    session,
-  };
+  return session;
 }
+// import { auth } from "@/auth";
+// import { NextResponse } from "next/server";
+
+// export async function requireAdmin() {
+//   const session = await auth();
+
+//   if (!session?.user) {
+//     return {
+//       error: NextResponse.json({ message: "No autenticado" }, { status: 401 }),
+//       session: null,
+//     };
+//   }
+
+//   if (session.user.role !== "ADMIN") {
+//     return {
+//       error: NextResponse.json({ message: "No autorizado" }, { status: 403 }),
+//       session: null,
+//     };
+//   }
+
+//   return {
+//     error: null,
+//     session,
+//   };
+// }

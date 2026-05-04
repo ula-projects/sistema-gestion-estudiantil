@@ -59,7 +59,7 @@ export function UserDropdown({ user }: UserDropdownProps) {
       <button
         type="button"
         onClick={() => setOpen((current) => !current)}
-        className="inline-flex items-center gap-3 rounded-xl border border-white/15 bg-white/10 px-3 py-2 text-sm font-semibold text-white transition hover:bg-white/15"
+        className="inline-flex items-center gap-3 rounded-xl border border-white/20 bg-[#031b46] px-3 py-2 text-sm font-semibold text-white transition hover:bg-[#031b46]/90"
       >
         <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-yellow-400 text-sm font-bold text-[#061b3a]">
           {user.image ? (

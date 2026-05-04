@@ -4,7 +4,6 @@ import { UserRound } from "lucide-react";
 import { auth } from "@/auth";
 import { UserDropdown } from "./UserDropdown";
 import type { HeaderUser } from "./UserDropdown";
-// import { User } from "next-auth";
 
 const navItems = [
   { label: "Inicio", href: "/#inicio" },
