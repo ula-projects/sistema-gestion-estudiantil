@@ -10,10 +10,10 @@ import {
   RequirementType,
 } from "../src/generated/prisma/client";
 
-const connectionString = process.env.DATABASE_URL;
+const connectionString = process.env.DIRECT_URL ?? process.env.DATABASE_URL;
 
 if (!connectionString) {
-  throw new Error("DATABASE_URL is not defined");
+  throw new Error("DIRECT_URL or DATABASE_URL is not defined");
 }
 
 const pool = new Pool({
@@ -299,14 +299,14 @@ async function seedSystemsEngineering() {
   // Materias del pensum (código, nombre, créditos, departamento, semestre y tipo)
   const subjects: SubjectSeed[] = [
     { code: "1004", name: "Cálculo 10", credits: 6, departmentCode: "DMAT", requirementType: RequirementType.REQUIRED, semesterNumber: 1 },
-    { code: "1006", name: "Sistemas de Representación 10", credits: 4, departmentCode: "DSIS", requirementType: RequirementType.REQUIRED, semesterNumber: 1 },
-    { code: "1035", name: "Métodos y Técnicas de Investigación", credits: 3, departmentCode: "DHUM", requirementType: RequirementType.REQUIRED, semesterNumber: 1 },
+    { code: "1006", name: "Sistemas de Representación 10", credits: 4, departmentCode: "DHUM", requirementType: RequirementType.REQUIRED, semesterNumber: 1 },
+    { code: "1035", name: "Métodos y Técnicas de Investigación", credits: 3, departmentCode: "DHUM", requirementType: RequirementType.ELECTIVE, semesterNumber: 1 },
     { code: "1053", name: "Ingeniería de Sistemas", credits: 4, departmentCode: "DSIS", requirementType: RequirementType.REQUIRED, semesterNumber: 1 },
     { code: "1054", name: "Programación 1", credits: 4, departmentCode: "DSIS", requirementType: RequirementType.REQUIRED, semesterNumber: 1 },
     { code: "1011", name: "Física 11", credits: 5, departmentCode: "DFIS", requirementType: RequirementType.REQUIRED, semesterNumber: 2 },
     { code: "1012", name: "Cálculo 20", credits: 6, departmentCode: "DMAT", requirementType: RequirementType.REQUIRED, semesterNumber: 2 },
     { code: "1055", name: "Programación 2", credits: 4, departmentCode: "DSIS", requirementType: RequirementType.REQUIRED, semesterNumber: 2 },
-    { code: "1056", name: "Introducción a los Procesos Químicos", credits: 5, departmentCode: "DFIS", requirementType: RequirementType.REQUIRED, semesterNumber: 2 },
+    { code: "1056", name: "Introducción a los Procesos Químicos", credits: 5, departmentCode: "DHUM", requirementType: RequirementType.REQUIRED, semesterNumber: 2 },
     { code: "1009", name: "Inglés-Lectura I", credits: 3, departmentCode: "DHUM", requirementType: RequirementType.REQUIRED, semesterNumber: 3 },
     { code: "1017", name: "Física 21", credits: 5, departmentCode: "DFIS", requirementType: RequirementType.REQUIRED, semesterNumber: 3 },
     { code: "1018", name: "Cálculo 30", credits: 6, departmentCode: "DMAT", requirementType: RequirementType.REQUIRED, semesterNumber: 3 },
@@ -421,7 +421,7 @@ async function seedSystemsEngineering() {
     { subjectCode: "7210", prerequisiteCodes: ["7201"] },
     { subjectCode: "7211", prerequisiteCodes: ["7202", "1059"] },
     { subjectCode: "7218", prerequisiteCodes: ["7207"] },
-    { subjectCode: "7220", prerequisiteCodes: ["7205", "7219"] },
+    { subjectCode: "7220", prerequisiteCodes: ["7205"] },
     { subjectCode: "7221", prerequisiteCodes: ["7200", "7207"] },
     { subjectCode: "7226", prerequisiteCodes: ["7113", "7041"] },
     { subjectCode: "7233", prerequisiteCodes: ["7232"] },
