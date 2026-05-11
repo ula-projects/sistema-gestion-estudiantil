@@ -18,7 +18,7 @@ export function LoginPageLayout() {
         <section className="mx-auto grid min-h-[calc(100dvh-5rem)] max-w-7xl overflow-hidden lg:grid-cols-[1.1fr_0.9fr]">
           <LoginBrandPanel />
 
-          <div className="relative flex items-center justify-center bg-white sm:px-8 sm:py-16 lg:px-16 py-8 px-4">
+          <div className="relative flex items-center justify-center py-8 px-4 bg-white sm:px-8 sm:py-16 lg:px-16 ">
             <LoginForm />
           </div>
         </section>

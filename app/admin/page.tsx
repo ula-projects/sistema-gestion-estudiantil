@@ -99,28 +99,7 @@ const pendingItems = [
   },
 ];
 
-const recentActivity = [
-  {
-    title: 'Se creó el usuario "maria.gomez@univ.edu"',
-    description: "por Administrador",
-    time: "Hoy, 10:24 a. m.",
-  },
-  {
-    title: 'Se registró la facultad "Ingeniería"',
-    description: "por Administrador",
-    time: "Hoy, 9:15 a. m.",
-  },
-  {
-    title: 'Se abrió el período "2025-2"',
-    description: "por Administrador",
-    time: "Ayer, 4:30 p. m.",
-  },
-  {
-    title: 'Se asignó pensum a la escuela "Sistemas"',
-    description: "por Administrador",
-    time: "Ayer, 11:05 a. m.",
-  },
-];
+const recentActivity = [];
 
 const chartData = [
   {

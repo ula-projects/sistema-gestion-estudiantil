@@ -19,8 +19,8 @@ const sidebarItems = [
     icon: LayoutDashboard,
   },
   {
-    label: "Usuarios",
-    href: "/admin/users",
+    label: "Estudiantes",
+    href: "/admin/students",
     icon: Users,
   },
   {

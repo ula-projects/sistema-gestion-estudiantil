@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import {
   ChevronDown,
-  GraduationCap,
   LayoutDashboard,
   LogOut,
   Settings,
@@ -52,6 +51,17 @@ export function UserDropdown({ user }: UserDropdownProps) {
     await signOut({
       redirectTo: "/",
     });
+  }
+
+  let dashborad_url = "student";
+
+  switch (user.role) {
+    case Role.ADMIN:
+      dashborad_url = "admin";
+      break;
+    case Role.PROFESSOR:
+      dashborad_url = "professor";
+      break;
   }
 
   return (
@@ -132,18 +142,18 @@ export function UserDropdown({ user }: UserDropdownProps) {
 
           <div className="p-2">
             <DropdownLink
-              href="/"
+              href={dashborad_url}
               icon={LayoutDashboard}
-              label="Panel académico"
+              label="Panel de Control"
             />
 
             <DropdownLink href="/profile" icon={UserRound} label="Mi perfil" />
 
-            <DropdownLink
+            {/* <DropdownLink
               href="/career"
               icon={GraduationCap}
               label="Mi carrera"
-            />
+            /> */}
 
             <DropdownLink
               href="/settings"
